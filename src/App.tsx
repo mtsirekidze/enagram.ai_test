@@ -4,7 +4,6 @@ import Dashboard from './components/Dashboard';
 import TestSession from './components/TestSession';
 import { ClipboardList } from 'lucide-react';
 
-// Customized Data based on user request
 const INITIAL_SESSIONS: PlatformSession[] = [
   {
     id: PlatformType.CHROME,
@@ -107,8 +106,9 @@ const App: React.FC = () => {
      const newCase: TestCase = {
       id: Date.now().toString(),
       category: 'Spelling',
-      description: text,
-      expectedResult: 'Manual verify',
+      description: 'Manual Entry',
+      sampleText: text, // Used if the text is a sample input
+      expectedResult: 'Verify manually',
       status: TestStatus.PENDING
     };
 

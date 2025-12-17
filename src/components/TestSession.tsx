@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { PlatformSession, TestStatus } from '../types';
-import { CheckCircle, XCircle, AlertCircle, ArrowLeft, Plus } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, ArrowLeft, Plus, BookOpen, Loader2, Copy } from 'lucide-react';
+// Note: In a real scenario, rename geminiService.ts to mockData.ts
+import { getSampleTestCases } from '../services/geminiService';
 
 interface TestSessionProps {
   session: PlatformSession;
@@ -11,12 +13,25 @@ interface TestSessionProps {
 
 const TestSession: React.FC<TestSessionProps> = ({ session, onBack, onUpdateStatus, onAddTestCase }) => {
   const [newCaseText, setNewCaseText] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmitManual = (e: React.FormEvent) => {
     e.preventDefault();
     if (newCaseText.trim()) {
       onAddTestCase(newCaseText);
       setNewCaseText('');
+    }
+  };
+
+  const handleLoadTemplates = async () => {
+    setLoading(true);
+    try {
+      const templates = await getSampleTestCases('complex');
+      templates.forEach(text => onAddTestCase(text));
+    } catch (error) {
+      console.error("Failed to load templates");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,23 +60,41 @@ const TestSession: React.FC<TestSessionProps> = ({ session, onBack, onUpdateStat
         </div>
       </div>
 
-      {/* Manual Add Section */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-        <form onSubmit={handleSubmitManual} className="flex gap-2">
-          <input 
-            type="text" 
-            value={newCaseText}
-            onChange={(e) => setNewCaseText(e.target.value)}
-            placeholder="Add a new manual test case..."
-            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
-          <button 
-            type="submit"
-            className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center"
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Manual Add Section */}
+        <div className="md:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+          <form onSubmit={handleSubmitManual} className="flex gap-2">
+            <input 
+              type="text" 
+              value={newCaseText}
+              onChange={(e) => setNewCaseText(e.target.value)}
+              placeholder="Add a new test case description..."
+              className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            />
+            <button 
+              type="submit"
+              className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Add Case
+            </button>
+          </form>
+        </div>
+
+        {/* Quick Templates */}
+        <div className="md:col-span-1">
+          <button
+            onClick={handleLoadTemplates}
+            disabled={loading}
+            className="w-full h-full px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-center font-medium"
           >
-            <Plus className="w-4 h-4 mr-2" /> Add
+            {loading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <BookOpen className="w-4 h-4 mr-2" />
+            )}
+            {loading ? 'Loading...' : 'Load Sample Data'}
           </button>
-        </form>
+        </div>
       </div>
 
       {/* Test Cases List */}
@@ -79,10 +112,26 @@ const TestSession: React.FC<TestSessionProps> = ({ session, onBack, onUpdateStat
                   {test.category}
                 </span>
               </div>
-              <p className="text-slate-800 font-medium text-lg leading-relaxed">
-                {test.description}
+              <p className="text-slate-800 font-medium text-lg leading-relaxed font-georgian">
+                {test.sampleText || test.description}
               </p>
-              <p className="text-sm text-slate-500 mt-1">Expected: {test.expectedResult}</p>
+              
+              {!test.sampleText && (
+                 <p className="text-sm text-slate-500 mt-1">Expected: {test.expectedResult}</p>
+              )}
+              
+              {/* Copy functionality for sample text */}
+              {(test.sampleText) && (
+                <div className="mt-2 flex items-center space-x-4">
+                    <p className="text-sm text-slate-500">Sample input data</p>
+                    <button 
+                    onClick={() => navigator.clipboard.writeText(test.sampleText!)}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center font-medium"
+                    >
+                    <Copy className="w-3 h-3 mr-1" /> Copy
+                    </button>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-2 shrink-0">
@@ -122,6 +171,12 @@ const TestSession: React.FC<TestSessionProps> = ({ session, onBack, onUpdateStat
             </div>
           </div>
         ))}
+
+        {session.testCases.length === 0 && (
+          <div className="text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
+            No test cases found. Add manually or load sample data.
+          </div>
+        )}
       </div>
     </div>
   );

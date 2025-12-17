@@ -20,7 +20,7 @@ export interface TestCase {
   expectedResult: string;
   status: TestStatus;
   notes?: string;
-  generatedText?: string; // For AI generated cases
+  sampleText?: string; // Pre-filled text for testing
 }
 
 export interface PlatformSession {
