@@ -1,0 +1,5 @@
+{
+  "name": "Enagram QA Hub",
+  "description": "A centralized dashboard for testing the Enagram Georgian spellchecker across Chrome, Edge, Word, Google Docs, and Web platforms. Features AI-powered test case generation.",
+  "requestFramePermissions": []
+}
